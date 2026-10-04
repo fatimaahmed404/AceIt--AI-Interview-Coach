@@ -1,0 +1,39 @@
+# ---- AceIt backend dependencies ----
+# Web / API
+Flask==3.1.3
+flask-cors==6.0.2
+
+# Database
+pymongo==4.17.0
+
+# Classic ML (baseline classifiers) + audio DL model
+scikit-learn
+pandas
+numpy
+librosa
+tensorflow==2.20.0
+
+# External services
+assemblyai==0.64.0
+groq==1.2.0
+
+# Loads backend/.env (config.py also has a zero-dependency fallback loader)
+python-dotenv
+
+# ---- Deep Learning / Visual analysis extension ----
+# Face detection, landmarks (Face Mesh / iris) and pose estimation
+mediapipe==1.0.1
+opencv-python-headless==5.0.0.93
+opencv-contrib-python==5.0.0.93
+
+# Facial expression CNN (ships a pretrained FER2013 model + haarcascade in fer/data)
+# Installed with --no-deps to avoid legacy moviepy/pkg_resources conflicts; we load
+# its bundled pretrained CNN directly through tf.keras (see ml/visual/emotion_analysis.py).
+fer==25.10.3
+
+# Video decoding / frame extraction
+imageio==2.38.0
+imageio-ffmpeg==0.6.0
+
+# Testing
+pytest
