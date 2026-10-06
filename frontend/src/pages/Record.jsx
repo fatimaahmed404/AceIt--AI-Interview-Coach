@@ -26,6 +26,7 @@ export default function Record() {
   const [videoUrl, setVideoUrl] = useState(null)
 
   const liveVideoRef = useRef(null)
+  const playbackRef = useRef(null)
   const recorderRef = useRef(null)
   const streamRef = useRef(null)
   const chunksRef = useRef([])
@@ -78,11 +79,16 @@ export default function Record() {
     recorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: 'video/webm' })
       blobRef.current = blob
-      setVideoUrl(URL.createObjectURL(blob))
+      // Revoke any previous object URL before creating a new one.
+      setVideoUrl(prev => {
+        if (prev) URL.revokeObjectURL(prev)
+        return URL.createObjectURL(blob)
+      })
       setPhase('DONE')
     }
     recorderRef.current = recorder
-    recorder.start()
+    // Request periodic chunks so short recordings still produce data.
+    recorder.start(250)
     setPhase('RECORDING')
     setElapsed(0)
     timerRef.current = setInterval(() => setElapsed(e => e + 1), 1000)
@@ -92,14 +98,32 @@ export default function Record() {
     clearInterval(timerRef.current)
     try { recorderRef.current?.stop() } catch { /* noop */ }
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop())
+    // Detach the (now dead) camera stream from the live element so the browser
+    // stops holding onto it; otherwise the playback element can show a frozen
+    // frame instead of the recording.
+    if (liveVideoRef.current) {
+      liveVideoRef.current.srcObject = null
+    }
   }
 
   const reRecord = () => {
     blobRef.current = null
-    setVideoUrl(null)
+    setVideoUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null })
     setPhase('IDLE')
     setError('')
   }
+
+  // Load the recorded blob into the dedicated playback element once we have it.
+  // Using an explicit effect (rather than relying on the src attribute alone)
+  // makes playback deterministic across browsers.
+  useEffect(() => {
+    const el = playbackRef.current
+    if (phase === 'DONE' && el && videoUrl) {
+      el.srcObject = null
+      el.src = videoUrl
+      el.load()
+    }
+  }, [phase, videoUrl])
 
   const runProgress = () => {
     setProgressIdx(0)
@@ -173,13 +197,20 @@ export default function Record() {
         aspectRatio: '4 / 3', position: 'relative', display: 'flex', alignItems: 'center',
         justifyContent: 'center',
       }}>
-        {/* Live preview while idle/recording, playback when done */}
-        {phase === 'DONE' && videoUrl ? (
-          <video src={videoUrl} controls style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-        ) : (
-          <video ref={liveVideoRef} playsInline muted
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        )}
+        {/* Live preview while idle/recording, playback when done.
+            Both elements always exist; we show one and hide the other so the
+            browser never has to re-bind a single element between a camera
+            stream (srcObject) and a recorded file (src). */}
+        <video ref={liveVideoRef} playsInline muted
+          style={{
+            width: '100%', height: '100%', objectFit: 'cover',
+            display: phase === 'DONE' ? 'none' : 'block',
+          }} />
+        <video ref={playbackRef} controls playsInline
+          style={{
+            width: '100%', height: '100%', objectFit: 'contain',
+            display: phase === 'DONE' ? 'block' : 'none',
+          }} />
 
         {phase === 'IDLE' && (
           <div style={{ position: 'absolute', color: '#ccc', fontSize: 13 }}>
