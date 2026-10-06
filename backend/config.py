@@ -90,9 +90,9 @@ GAZE_H_THRESHOLD = _get_float("GAZE_H_THRESHOLD", 0.22)
 GAZE_V_THRESHOLD = _get_float("GAZE_V_THRESHOLD", 0.25)
 
 # Head-pose angle thresholds (degrees) for flagging extreme positions.
-HEAD_YAW_THRESHOLD = _get_float("HEAD_YAW_THRESHOLD", 25.0)
-HEAD_PITCH_DOWN_THRESHOLD = _get_float("HEAD_PITCH_DOWN_THRESHOLD", 18.0)
-HEAD_TILT_THRESHOLD = _get_float("HEAD_TILT_THRESHOLD", 18.0)
+HEAD_YAW_THRESHOLD = _get_float("HEAD_YAW_THRESHOLD", 30.0)
+HEAD_PITCH_DOWN_THRESHOLD = _get_float("HEAD_PITCH_DOWN_THRESHOLD", 20.0)
+HEAD_TILT_THRESHOLD = _get_float("HEAD_TILT_THRESHOLD", 25.0)
 
 # Where temporary uploaded videos are written during processing.
 TEMP_DIR = os.environ.get("ACEIT_TEMP_DIR", os.path.join(os.path.dirname(__file__), "temp_uploads"))

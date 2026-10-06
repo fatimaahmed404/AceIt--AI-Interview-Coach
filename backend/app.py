@@ -17,6 +17,7 @@ from classifiers.relevance import predict_relevance
 from classifiers.audio_model import predict_audio
 from utils.assemblyai import transcribe_audio
 from utils.gemini import rewrite_answer, ideal_answer_analysis
+from utils.audio_extract import extract_wav
 from visual_runner import run_visual_analysis, visual_pipeline_available
 from ml.visual.scoring import score_overall
 import question_bank
@@ -201,6 +202,7 @@ def analyze_full():
 
     video_path = None
     audio_path = None
+    extracted_wav = None
     try:
         if 'video' in request.files and request.files['video'].filename:
             v = request.files['video']
@@ -209,13 +211,21 @@ def analyze_full():
             a = request.files['audio']
             audio_path = _save_temp_upload(a, '.wav')
 
+        # If no standalone audio was uploaded but we have a video, pull the
+        # audio track out of the recording so the voice model can run on it.
+        if audio_path is None and video_path is not None:
+            extracted_wav = extract_wav(video_path, config.TEMP_DIR)
+
+        # The source used for the audio model + (fallback) transcription.
+        audio_source = audio_path or extracted_wav
+
         # --- Audio / transcription ---
         audio_score = None
-        if audio_path:
+        if audio_source:
             try:
                 if not transcript.strip():
-                    transcript = transcribe_audio(audio_path)
-                audio_score = predict_audio(audio_path)
+                    transcript = transcribe_audio(audio_source)
+                audio_score = predict_audio(audio_source)
             except Exception as exc:  # noqa: BLE001 - isolate audio failures
                 log.warning("Audio analysis failed: %s", exc)
 
@@ -243,8 +253,12 @@ def analyze_full():
         response = _assemble_scorecard(question, text_block, audio_score, visual_block)
         return jsonify(response)
     finally:
-        for p in (video_path, audio_path):
-            if p and config.DELETE_VIDEO_AFTER_ANALYSIS and os.path.exists(p):
+        # Always clean up the extracted WAV; clean uploads per the privacy setting.
+        cleanup = [extracted_wav]
+        if config.DELETE_VIDEO_AFTER_ANALYSIS:
+            cleanup += [video_path, audio_path]
+        for p in cleanup:
+            if p and os.path.exists(p):
                 try:
                     os.remove(p)
                 except OSError:

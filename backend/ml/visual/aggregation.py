@@ -98,9 +98,21 @@ def _agg_head(face_frames):
     yaws = np.array([h["yaw"] for h in heads])
     pitches = np.array([h["pitch"] for h in heads])
     rolls = np.array([h["roll"] for h in heads])
-    # Stability: lower angular variance -> higher stability (0..10 internal).
-    spread = float(np.std(yaws) + np.std(pitches) + np.std(rolls))
-    stability = max(0.0, 1.0 - min(1.0, spread / 60.0))  # 0..1
+
+    # Stability: how little the head angle moves frame-to-frame. We use the
+    # median absolute deviation (MAD) per axis, which is robust to the
+    # occasional noisy solvePnP frame, instead of the standard deviation (which
+    # a few outliers can blow up). ~15 degrees of MAD on an axis is treated as
+    # fully "unstable" for that axis; small natural movement stays near 1.0.
+    def _axis_stability(a):
+        if len(a) == 0:
+            return 1.0
+        mad = float(np.median(np.abs(a - np.median(a))))
+        return max(0.0, 1.0 - min(1.0, mad / 15.0))
+
+    stability = float(np.mean([
+        _axis_stability(yaws), _axis_stability(pitches), _axis_stability(rolls)
+    ]))  # 0..1
     events = Counter(h["event"] for h in heads if h.get("event"))
     looking_down = _pct(events.get("looking_down", 0), valid)
     return {
@@ -162,15 +174,24 @@ def _build_timeline(frames):
         if posture and posture["state"] in (STATE_SLOUCHED, STATE_SLIGHT):
             raw.append((ts, "slouch_detected"))
 
-    # Collapse consecutive same-event entries.
+    # Merge repeated occurrences of the same event type that happen close
+    # together in time. We track the last-seen entry *per event type* (not just
+    # the immediately preceding entry) so interleaved events still collapse,
+    # e.g. "head_tilt, slouch, head_tilt" within a couple of seconds becomes
+    # one head_tilt span and one slouch span rather than three entries.
+    last_by_event = {}
     timeline = []
+    MERGE_WINDOW = 2.0  # seconds
     for ts, event in raw:
-        if timeline and timeline[-1]["event"] == event and ts - timeline[-1]["_last"] <= 1.5:
-            timeline[-1]["duration"] = round(ts - timeline[-1]["timestamp"], 1)
-            timeline[-1]["_last"] = ts
+        prev = last_by_event.get(event)
+        if prev is not None and ts - prev["_last"] <= MERGE_WINDOW:
+            prev["duration"] = round(ts - prev["timestamp"], 1)
+            prev["_last"] = ts
         else:
-            timeline.append({"timestamp": ts, "event": event, "duration": 0.0, "_last": ts})
+            entry = {"timestamp": ts, "event": event, "duration": 0.0, "_last": ts}
+            timeline.append(entry)
+            last_by_event[event] = entry
     for t in timeline:
         t.pop("_last", None)
-    # Keep only the most informative events (drop very short good-eye-contact spam).
+    timeline.sort(key=lambda e: e["timestamp"])
     return timeline
