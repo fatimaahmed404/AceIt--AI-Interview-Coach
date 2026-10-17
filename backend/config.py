@@ -56,6 +56,13 @@ def _get_int(name, default):
         return int(default)
 
 
+def _get_bool(name, default):
+    val = os.environ.get(name)
+    if val is None:
+        return bool(default)
+    return str(val).strip().lower() in ("1", "true", "yes", "on")
+
+
 # ---------------------------------------------------------------------------
 # Database
 # ---------------------------------------------------------------------------
@@ -120,3 +127,87 @@ OVERALL_WEIGHTS = {
     "text": _get_float("W_TEXT", 0.35),
     "visual": _get_float("W_VISUAL", 0.35),
 }
+
+
+# ===========================================================================
+# Authentication & account management
+# ===========================================================================
+
+# App environment: "development" or "production". Controls secure-cookie flags.
+APP_ENV = os.environ.get("APP_ENV", "development").lower()
+IS_PRODUCTION = APP_ENV == "production"
+
+# Server-side secret used to sign the CSRF token (NOT the session id itself,
+# which is a random opaque token stored in the DB). Must be set in production.
+SECRET_KEY = os.environ.get("SECRET_KEY", "dev-insecure-secret-change-me")
+
+# Public URLs. Email links and redirects use FRONTEND_URL; never hard-code
+# localhost in templates.
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173").rstrip("/")
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://127.0.0.1:5000").rstrip("/")
+
+# Explicit CORS allowlist (comma-separated). Credentials are only sent to these
+# origins. Never use a wildcard with credentials.
+CORS_ORIGINS = [
+    o.strip() for o in os.environ.get(
+        "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+    ).split(",") if o.strip()
+]
+
+# ---- Session cookie ----
+SESSION_COOKIE_NAME = os.environ.get("SESSION_COOKIE_NAME", "aceit_session")
+CSRF_COOKIE_NAME = os.environ.get("CSRF_COOKIE_NAME", "aceit_csrf")
+# Lifetime of a login session (days). "Remember me" uses the full lifetime;
+# a non-remembered login uses a shorter window.
+SESSION_LIFETIME_DAYS = _get_int("SESSION_LIFETIME_DAYS", 30)
+SESSION_SHORT_HOURS = _get_int("SESSION_SHORT_HOURS", 12)
+# SameSite policy: "Lax" for same-site, "None" required for cross-site cookies
+# over HTTPS. Default Lax in dev (localhost is treated as secure by browsers).
+COOKIE_SAMESITE = os.environ.get("COOKIE_SAMESITE", "Lax")
+# Secure flag: forced on in production; configurable in dev.
+COOKIE_SECURE = _get_bool("COOKIE_SECURE", IS_PRODUCTION)
+# Optional cookie domain (leave empty for host-only cookies).
+COOKIE_DOMAIN = os.environ.get("COOKIE_DOMAIN", "") or None
+
+# ---- Password policy ----
+PASSWORD_MIN_LENGTH = _get_int("PASSWORD_MIN_LENGTH", 12)
+
+# ---- Token / OTP lifetimes ----
+EMAIL_VERIFY_TOKEN_HOURS = _get_int("EMAIL_VERIFY_TOKEN_HOURS", 24)
+RESET_OTP_MINUTES = _get_int("RESET_OTP_MINUTES", 10)
+RESET_OTP_MAX_ATTEMPTS = _get_int("RESET_OTP_MAX_ATTEMPTS", 5)
+RESEND_COOLDOWN_SECONDS = _get_int("RESEND_COOLDOWN_SECONDS", 60)
+
+# ---- Rate limits (max requests / window seconds) ----
+RATE_LIMITS = {
+    "login": (_get_int("RL_LOGIN_MAX", 10), _get_int("RL_LOGIN_WINDOW", 300)),
+    "register": (_get_int("RL_REGISTER_MAX", 5), _get_int("RL_REGISTER_WINDOW", 3600)),
+    "forgot": (_get_int("RL_FORGOT_MAX", 5), _get_int("RL_FORGOT_WINDOW", 3600)),
+    "verify_reset": (_get_int("RL_VERIFY_RESET_MAX", 10), _get_int("RL_VERIFY_RESET_WINDOW", 900)),
+    "resend": (_get_int("RL_RESEND_MAX", 5), _get_int("RL_RESEND_WINDOW", 3600)),
+}
+
+# ---- Max request body size (bytes) for non-upload JSON endpoints ----
+MAX_JSON_BODY_BYTES = _get_int("MAX_JSON_BODY_BYTES", 64 * 1024)
+
+# ===========================================================================
+# SMTP email (Nodemailer-equivalent for the Python/Flask backend)
+# ===========================================================================
+# When SMTP is not configured, the email service falls back to logging the
+# message to the console (dev mode) so the app still runs, and it NEVER reports
+# a send as successful when it was not actually delivered.
+SMTP_HOST = os.environ.get("SMTP_HOST", "")
+SMTP_PORT = _get_int("SMTP_PORT", 587)
+SMTP_SECURE = _get_bool("SMTP_SECURE", False)  # True = implicit TLS (port 465)
+SMTP_USER = os.environ.get("SMTP_USER", "")
+SMTP_PASS = os.environ.get("SMTP_PASS", "")
+SMTP_TIMEOUT = _get_int("SMTP_TIMEOUT", 15)
+MAIL_FROM_NAME = os.environ.get("MAIL_FROM_NAME", "AceIt")
+MAIL_FROM_ADDRESS = os.environ.get("MAIL_FROM_ADDRESS", "no-reply@aceit.local")
+# Force the console-only transport (used by tests and local dev without SMTP).
+MAIL_CONSOLE_FALLBACK = _get_bool("MAIL_CONSOLE_FALLBACK", True)
+
+
+def smtp_configured():
+    """True only when enough SMTP settings exist to attempt a real send."""
+    return bool(SMTP_HOST and SMTP_PORT and MAIL_FROM_ADDRESS)

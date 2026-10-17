@@ -21,6 +21,10 @@ from utils.audio_extract import extract_wav
 from visual_runner import run_visual_analysis, visual_pipeline_available
 from ml.visual.scoring import score_overall
 import question_bank
+from auth import models as auth_models
+from auth.middleware import init_auth, login_required, current_user_id, current_user
+from auth.routes import auth_bp
+from auth.user_routes import user_bp
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("aceit.app")
@@ -31,7 +35,37 @@ db = client[config.MONGO_DB]
 os.makedirs(config.TEMP_DIR, exist_ok=True)
 
 app = Flask(__name__)
-CORS(app)
+app.secret_key = config.SECRET_KEY
+
+# Explicit CORS allowlist with credentials (never a wildcard with credentials).
+CORS(
+    app,
+    resources={r"/api/*": {"origins": config.CORS_ORIGINS}},
+    supports_credentials=True,
+    allow_headers=["Content-Type", "X-CSRF-Token"],
+    expose_headers=["Retry-After"],
+)
+
+# Secure response headers on every response.
+@app.after_request
+def _security_headers(resp):  # noqa: ANN001
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    return resp
+
+
+# Auth: resolve the current user from the session cookie on each request.
+init_auth(app, db)
+app.register_blueprint(auth_bp, url_prefix="/api/auth")
+app.register_blueprint(user_bp, url_prefix="/api/user")
+
+# Ensure auth indexes exist (unique email, session/token TTLs).
+try:
+    auth_models.ensure_indexes(db)
+    log.info("Auth indexes ensured.")
+except Exception as exc:  # noqa: BLE001
+    log.warning("Could not ensure auth indexes: %s", exc)
 
 # Seed the question bank on startup (idempotent).
 try:
@@ -61,22 +95,31 @@ def _save_temp_upload(file_storage, suffix):
 # Existing endpoints (unchanged behaviour, kept for backward compatibility)
 # ---------------------------------------------------------------------------
 @app.route('/api/history', methods=['GET'])
+@login_required
 def get_history():
-    sessions = list(db.sessions.find({}).sort('date', -1).limit(50))
+    # Only return sessions owned by the authenticated user.
+    sessions = list(
+        db.sessions.find({'user_id': current_user_id()}).sort('date', -1).limit(50)
+    )
     for s in sessions:
         s['_id'] = str(s['_id'])
     return jsonify(sessions)
 
 
 @app.route('/api/history', methods=['POST'])
+@login_required
 def save_history():
     data = request.json or {}
+    # Stamp ownership server-side; never trust a client-supplied user_id.
+    data.pop('user_id', None)
+    data['user_id'] = current_user_id()
     data['date'] = datetime.utcnow().isoformat()
     result = db.sessions.insert_one(data)
     return jsonify({'saved': True, 'id': str(result.inserted_id)})
 
 
 @app.route('/api/analyze', methods=['POST'])
+@login_required
 def analyze():
     data = request.json or {}
     transcript = data.get('transcript') or ''
@@ -101,6 +144,7 @@ def analyze():
 
 
 @app.route('/api/analyze-audio', methods=['POST'])
+@login_required
 def analyze_audio():
     if 'audio' not in request.files:
         return jsonify({'error': "no 'audio' file in request"}), 400
@@ -119,14 +163,19 @@ def analyze_audio():
 
 
 @app.route('/api/history/<id>', methods=['DELETE'])
+@login_required
 def delete_history(id):
     if not id or id == 'undefined':
         return jsonify({'error': 'invalid id'}), 400
     try:
-        db.sessions.delete_one({'_id': ObjectId(id)})
-        return jsonify({'deleted': True})
-    except (InvalidId, Exception) as e:  # noqa: BLE001
-        return jsonify({'error': str(e)}), 400
+        oid = ObjectId(id)
+    except (InvalidId, Exception):  # noqa: BLE001
+        return jsonify({'error': 'invalid id'}), 400
+    # Ownership-scoped delete: a user can only delete their own session.
+    result = db.sessions.delete_one({'_id': oid, 'user_id': current_user_id()})
+    if result.deleted_count == 0:
+        return jsonify({'error': 'not found'}), 404
+    return jsonify({'deleted': True})
 
 
 @app.route('/api/classifier-comparison', methods=['GET'])
@@ -143,11 +192,14 @@ def classifier_comparison():
 # New: single-session detail
 # ---------------------------------------------------------------------------
 @app.route('/api/sessions/<id>', methods=['GET'])
+@login_required
 def get_session(id):
     try:
-        doc = db.sessions.find_one({'_id': ObjectId(id)})
+        oid = ObjectId(id)
     except (InvalidId, Exception):  # noqa: BLE001
         return jsonify({'error': 'invalid id'}), 400
+    # Ownership check: only the owner can read a session's details.
+    doc = db.sessions.find_one({'_id': oid, 'user_id': current_user_id()})
     if not doc:
         return jsonify({'error': 'session not found'}), 404
     return jsonify(_serialize(doc))
@@ -157,6 +209,7 @@ def get_session(id):
 # New: visual (Deep Learning) analysis of a recorded video
 # ---------------------------------------------------------------------------
 @app.route('/api/analyze-video', methods=['POST'])
+@login_required
 def analyze_video_endpoint():
     """
     Accepts a recorded interview video (multipart field 'video'), runs the
@@ -186,6 +239,7 @@ def analyze_video_endpoint():
 # New: full multimodal analysis (audio + text + visual) in one call
 # ---------------------------------------------------------------------------
 @app.route('/api/analyze-full', methods=['POST'])
+@login_required
 def analyze_full():
     """
     One-shot multimodal analysis.
@@ -333,6 +387,7 @@ def _assemble_scorecard(question, text_block, audio_score, visual_block):
 # New: ideal answer analysis
 # ---------------------------------------------------------------------------
 @app.route('/api/ideal-answer', methods=['POST'])
+@login_required
 def ideal_answer():
     data = request.json or {}
     question = data.get('question', '')
@@ -381,8 +436,9 @@ def get_question(id):
 # New: progress dashboard
 # ---------------------------------------------------------------------------
 @app.route('/api/progress', methods=['GET'])
+@login_required
 def progress():
-    sessions = list(db.sessions.find({}).sort('date', 1))
+    sessions = list(db.sessions.find({'user_id': current_user_id()}).sort('date', 1))
     for s in sessions:
         s['_id'] = str(s['_id'])
     return jsonify(_compute_progress(sessions))
@@ -461,6 +517,7 @@ def _compute_streak(sessions):
 # New: mock interview mode
 # ---------------------------------------------------------------------------
 @app.route('/api/mock-interview/start', methods=['POST'])
+@login_required
 def mock_start():
     """Start a 10-question timed mock interview session."""
     data = request.json or {}
@@ -480,6 +537,7 @@ def mock_start():
     session_doc = {
         'type': 'mock',
         'status': 'in_progress',
+        'user_id': current_user_id(),
         'thinking_time': int(data.get('thinking_time', 30)),
         'questions': questions,
         'answers': [],
@@ -495,25 +553,33 @@ def mock_start():
 
 
 @app.route('/api/mock-interview/<mock_id>/answer', methods=['POST'])
+@login_required
 def mock_answer(mock_id):
     """Record a single per-question result inside a mock session."""
     data = request.json or {}
+    data.pop('user_id', None)
     try:
         oid = ObjectId(mock_id)
     except (InvalidId, Exception):  # noqa: BLE001
         return jsonify({'error': 'invalid mock id'}), 400
-    db.mock_sessions.update_one({'_id': oid}, {'$push': {'answers': data}})
+    # Ownership-scoped update.
+    result = db.mock_sessions.update_one(
+        {'_id': oid, 'user_id': current_user_id()}, {'$push': {'answers': data}}
+    )
+    if result.matched_count == 0:
+        return jsonify({'error': 'mock session not found'}), 404
     return jsonify({'saved': True})
 
 
 @app.route('/api/mock-interview/<mock_id>/complete', methods=['POST'])
+@login_required
 def mock_complete(mock_id):
     """Finalise a mock session and compute an aggregate report."""
     try:
         oid = ObjectId(mock_id)
     except (InvalidId, Exception):  # noqa: BLE001
         return jsonify({'error': 'invalid mock id'}), 400
-    doc = db.mock_sessions.find_one({'_id': oid})
+    doc = db.mock_sessions.find_one({'_id': oid, 'user_id': current_user_id()})
     if not doc:
         return jsonify({'error': 'mock session not found'}), 404
 

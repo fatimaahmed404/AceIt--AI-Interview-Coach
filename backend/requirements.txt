@@ -6,6 +6,9 @@ flask-cors==6.0.2
 # Database
 pymongo==4.17.0
 
+# Authentication (password hashing)
+argon2-cffi
+
 # Classic ML (baseline classifiers) + audio DL model
 scikit-learn
 pandas
