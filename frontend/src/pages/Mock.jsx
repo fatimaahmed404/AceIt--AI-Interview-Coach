@@ -46,7 +46,7 @@ export default function Mock() {
     setCountdown(think)
     // open camera early so the preview is ready
     try {
-      streamRef.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true })
+      streamRef.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
       if (liveRef.current) { liveRef.current.srcObject = streamRef.current; liveRef.current.muted = true; liveRef.current.play().catch(() => {}) }
     } catch {
       setError('Camera/microphone permission is required for a mock interview.')
@@ -168,7 +168,7 @@ export default function Mock() {
         <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6 }}>{q?.text}</p>
       </Card>
 
-      <div className="mock-video" style={{ background: '#000', borderRadius: 12, overflow: 'hidden', aspectRatio: '4 / 3',
+      <div style={{ background: '#000', borderRadius: 12, overflow: 'hidden', aspectRatio: '4 / 3',
         position: 'relative', marginBottom: 14, border: `1px solid ${phase === 'RECORDING' ? '#D94848' : 'var(--color-border-tertiary)'}` }}>
         <video ref={liveRef} playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         {phase === 'THINKING' && (

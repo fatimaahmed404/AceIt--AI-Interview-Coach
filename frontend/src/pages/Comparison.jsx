@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { getClassifierComparison } from '../api'
 
 const COLORS = {
   'Naive Bayes':          { bar: '#7F77DD', bg: '#EEEDFE', text: '#3C3489' },
@@ -25,7 +24,8 @@ export default function Comparison() {
   const [activeMetric, setActiveMetric] = useState('accuracy')
 
   useEffect(() => {
-    getClassifierComparison()
+    fetch('http://127.0.0.1:5000/api/classifier-comparison')
+      .then(r => r.json())
       .then(d => { setData(d); setLoading(false) })
       .catch(() => setLoading(false))
   }, [])
@@ -44,7 +44,7 @@ export default function Comparison() {
   const metrics = ['accuracy', 'precision', 'recall', 'f1']
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', padding: '1.25rem 1rem 2rem' }}>
+    <div style={{ maxWidth: 700, margin: '2rem auto', padding: '0 1rem' }}>
       <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 4 }}>
         Classifier comparison
       </h2>
