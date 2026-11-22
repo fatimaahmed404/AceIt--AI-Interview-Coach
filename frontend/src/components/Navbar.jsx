@@ -15,6 +15,7 @@ export default function Navbar() {
   const { pathname } = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -25,8 +26,12 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
+  // close drawer on route change
+  useEffect(() => { setDrawerOpen(false); }, [pathname]);
+
   const doLogout = async () => {
     setMenuOpen(false);
+    setDrawerOpen(false);
     await logout();
     navigate("/login");
   };
@@ -35,6 +40,7 @@ export default function Navbar() {
     .split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
   return (
+    <>
     <nav style={{
       display: "flex", alignItems: "center", justifyContent: "space-between",
       padding: "0 2rem", height: 52,
@@ -57,7 +63,7 @@ export default function Navbar() {
       </button>
 
       {isAuthenticated && (
-        <div style={{ display: "flex", gap: 2 }}>
+        <div className="nav-desktop-links" style={{ display: "flex", gap: 2 }}>
           {links.map(({ path, label }) => {
             const active = pathname === path;
             return (
@@ -74,7 +80,7 @@ export default function Navbar() {
       )}
 
       {isAuthenticated ? (
-        <div ref={menuRef} style={{ position: "relative" }}>
+        <div ref={menuRef} style={{ position: "relative", display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={() => setMenuOpen((o) => !o)} aria-haspopup="menu" aria-expanded={menuOpen}
             style={{ display: "flex", alignItems: "center", gap: 8, background: "none",
                      border: "none", cursor: "pointer", padding: 2 }}>
@@ -100,6 +106,19 @@ export default function Navbar() {
               <MenuItem onClick={doLogout} danger>Log out</MenuItem>
             </div>
           )}
+          {/* Hamburger — mobile only, hidden on desktop via mobile.css */}
+          <button className="nav-hamburger" onClick={() => setDrawerOpen(o => !o)}
+            aria-label="Toggle menu"
+            style={{ display: "none", background: "none", border: "none",
+                     cursor: "pointer", padding: 4, color: "var(--color-text-primary)" }}>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
+              stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+              {drawerOpen
+                ? <><line x1="4" y1="4" x2="16" y2="16"/><line x1="16" y1="4" x2="4" y2="16"/></>
+                : <><line x1="3" y1="6" x2="17" y2="6"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="14" x2="17" y2="14"/></>
+              }
+            </svg>
+          </button>
         </div>
       ) : (
         <div style={{ display: "flex", gap: 8 }}>
@@ -108,6 +127,33 @@ export default function Navbar() {
         </div>
       )}
     </nav>
+
+    {/* Mobile drawer — hidden on desktop via mobile.css */}
+    {isAuthenticated && drawerOpen && (
+      <div className="nav-mobile-drawer" style={{
+        position: "fixed", top: 52, left: 0, right: 0, bottom: 0, zIndex: 99,
+        background: "var(--color-background-primary)",
+        borderTop: "0.5px solid var(--color-border-tertiary)", overflowY: "auto",
+      }}>
+        {links.map(({ path, label }) => {
+          const active = pathname === path;
+          return (
+            <button key={path} onClick={() => { setDrawerOpen(false); navigate(path); }} style={{
+              display: "block", width: "100%", textAlign: "left",
+              fontSize: 15, padding: "16px 20px", border: "none",
+              borderBottom: "0.5px solid var(--color-border-tertiary)",
+              background: active ? "#EEEDFE" : "var(--color-background-primary)",
+              color: active ? "#3C3489" : "var(--color-text-primary)",
+              fontWeight: active ? 500 : 400, cursor: "pointer",
+            }}>{label}</button>
+          );
+        })}
+        <button onClick={() => { setDrawerOpen(false); navigate("/account"); }} style={drawerItemStyle}>Account settings</button>
+        <button onClick={() => { setDrawerOpen(false); navigate("/comparison"); }} style={drawerItemStyle}>Model comparison</button>
+        <button onClick={doLogout} style={{ ...drawerItemStyle, color: "#D94848" }}>Log out</button>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -130,3 +176,10 @@ const ghostBtn = { fontSize: 13, padding: "6px 14px", borderRadius: 8, cursor: "
   color: "var(--color-text-primary)" };
 const primaryBtn = { fontSize: 13, padding: "6px 14px", borderRadius: 8, cursor: "pointer",
   border: "0.5px solid #534AB7", background: "#534AB7", color: "#fff", fontWeight: 500 };
+const drawerItemStyle = {
+  display: "block", width: "100%", textAlign: "left",
+  fontSize: 15, padding: "16px 20px", border: "none",
+  borderBottom: "0.5px solid var(--color-border-tertiary)",
+  background: "var(--color-background-primary)",
+  color: "var(--color-text-primary)", cursor: "pointer",
+};

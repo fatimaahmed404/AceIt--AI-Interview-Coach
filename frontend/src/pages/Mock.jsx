@@ -46,7 +46,7 @@ export default function Mock() {
     setCountdown(think)
     // open camera early so the preview is ready
     try {
-      streamRef.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      streamRef.current = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true })
       if (liveRef.current) { liveRef.current.srcObject = streamRef.current; liveRef.current.muted = true; liveRef.current.play().catch(() => {}) }
     } catch {
       setError('Camera/microphone permission is required for a mock interview.')

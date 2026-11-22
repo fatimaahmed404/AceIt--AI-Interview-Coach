@@ -1,0 +1,101 @@
+/* ============================================================
+   mobile.css — AceIt
+   Defines the CSS variables the app needs (index.css is blank),
+   then adds mobile-only layout fixes inside media queries.
+   Desktop/laptop layout is NOT touched.
+   ============================================================ */
+
+/* --- CSS variables (required by every page, undefined otherwise) --- */
+:root {
+  --color-background-primary:   #ffffff;
+  --color-background-secondary: #f7f7f8;
+  --color-text-primary:         #0f0e17;
+  --color-text-secondary:       #6b6b78;
+  --color-border-tertiary:      #e4e4e9;
+
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background-primary:   #111113;
+    --color-background-secondary: #1c1c1f;
+    --color-text-primary:         #f0f0f3;
+    --color-text-secondary:       #9898a6;
+    --color-border-tertiary:      #2e2e35;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+
+/* ============================================================
+   Everything below is MOBILE ONLY (max-width: 640px)
+   ============================================================ */
+
+@media (max-width: 640px) {
+
+  /* Prevent iOS from zooming into inputs with font-size < 16px */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Minimum thumb-friendly tap target */
+  button {
+    min-height: 44px;
+  }
+
+  /* --- Navbar: hide the desktop link strip, show hamburger --- */
+  .nav-desktop-links { display: none !important; }
+  .nav-hamburger     { display: flex !important; }
+
+  /* --- Pages: ensure horizontal padding so content doesn't touch edges --- */
+  .page-root {
+    padding-left:  1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* --- Video camera stage: portrait ratio on phone --- */
+  .video-stage {
+    aspect-ratio: 3 / 4 !important;
+  }
+
+  /* --- History expanded detail: single column --- */
+  .history-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* --- Results overall header: stack ring + stats --- */
+  .results-header {
+    flex-direction: column !important;
+  }
+  .results-mini-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    width: 100%;
+  }
+
+  /* --- Dashboard summary: 2×2 grid --- */
+  .dashboard-summary {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* --- Button rows: wrap on small screens --- */
+  .btn-row {
+    flex-wrap: wrap !important;
+  }
+  .btn-row > button {
+    flex: 1 1 130px !important;
+  }
+
+  /* --- Auth card: tighter padding on small phones --- */
+  .auth-card {
+    padding: 20px 16px !important;
+  }
+}
+
+/* Show hamburger only on mobile (hide on desktop) */
+@media (min-width: 641px) {
+  .nav-hamburger     { display: none   !important; }
+  .nav-mobile-drawer { display: none   !important; }
+}

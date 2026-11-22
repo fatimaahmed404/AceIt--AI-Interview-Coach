@@ -46,7 +46,7 @@ export default function Record() {
     setError('')
     let stream
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true })
     } catch (err) {
       if (err && err.name === 'NotAllowedError') {
         setError('Camera / microphone permission was denied. Please allow access and try again.')
@@ -191,7 +191,7 @@ export default function Record() {
       )}
 
       {/* Video stage */}
-      <div style={{
+      <div className="video-stage" style={{
         background: '#000', borderRadius: 12, overflow: 'hidden', marginBottom: 16,
         border: `1px solid ${phase === 'RECORDING' ? '#D94848' : 'var(--color-border-tertiary)'}`,
         aspectRatio: '4 / 3', position: 'relative', display: 'flex', alignItems: 'center',
