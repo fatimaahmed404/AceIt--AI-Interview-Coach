@@ -37,13 +37,13 @@ os.makedirs(config.TEMP_DIR, exist_ok=True)
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
 
-# CORS: explicit allowlist + optional regex for Vercel preview deployments.
+# CORS: explicit allowlist + Vercel preview pattern checked at request time
 def _cors_origin(origin):
     return config.cors_origin_allowed(origin)
 
 CORS(
     app,
-    resources={r"/api/*": {"origins": _cors_origin}},
+    resources={r"/api/*": {"origins": config.CORS_ORIGINS}},
     supports_credentials=True,
     allow_headers=["Content-Type", "X-CSRF-Token"],
     expose_headers=["Retry-After"],
