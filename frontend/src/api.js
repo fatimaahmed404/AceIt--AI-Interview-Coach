@@ -1,4 +1,6 @@
-const BASE = 'http://127.0.0.1:5000/api'
+// Backend URL — set VITE_API_URL in your Vercel environment variables.
+// Falls back to localhost for local development.
+const BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api'
 
 // ---------------------------------------------------------------------------
 // Core request helpers
@@ -92,7 +94,7 @@ export const userApi = {
 }
 
 // ===========================================================================
-// Existing feature API (now credential + CSRF aware)
+// Feature API
 // ===========================================================================
 export const analyzeAudio = async (audioBlob) => {
   const fd = new FormData()
@@ -146,3 +148,6 @@ export const completeMock = (mockId) =>
   request(`/mock-interview/${mockId}/complete`, { method: 'POST', body: {} })
 
 export const getModelInfo = () => request('/model-info')
+
+// Classifier comparison uses same BASE — fix for Comparison.jsx which had a hardcoded URL
+export const getClassifierComparison = () => request('/classifier-comparison')

@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { getQuestions } from '../api'
 
 const CATEGORY_META = {
-  HR: { color: '#EF9F27', bg: '#FAEEDA', text: '#BA7517' },
+  HR:          { color: '#EF9F27', bg: '#FAEEDA', text: '#BA7517' },
   Behavioural: { color: '#7F77DD', bg: '#EEEDFE', text: '#26215C' },
-  Technical: { color: '#1D9E75', bg: '#E1F5EE', text: '#0F6E56' },
+  Technical:   { color: '#1D9E75', bg: '#E1F5EE', text: '#0F6E56' },
   Situational: { color: '#378ADD', bg: '#E6F1FB', text: '#0C447C' },
 }
 
-// Fallback used only if the backend is unreachable.
 const FALLBACK = [
   { text: 'Tell me about yourself.', category: 'HR', difficulty: 'Easy' },
   { text: 'Describe a challenge you overcame.', category: 'Behavioural', difficulty: 'Medium' },
@@ -17,15 +16,19 @@ const FALLBACK = [
 ]
 
 export default function Home() {
-  const [category, setCategory] = useState('HR')
+  const [category, setCategory]       = useState('HR')
   const [subcategory, setSubcategory] = useState('')
-  const [difficulty, setDifficulty] = useState('')
-  const [search, setSearch] = useState('')
-  const [questions, setQuestions] = useState([])
-  const [selected, setSelected] = useState('')
-  const [meta, setMeta] = useState({ categories: Object.keys(CATEGORY_META), technical_subcategories: [], difficulties: [] })
-  const [loading, setLoading] = useState(true)
-  const [offline, setOffline] = useState(false)
+  const [difficulty, setDifficulty]   = useState('')
+  const [search, setSearch]           = useState('')
+  const [questions, setQuestions]     = useState([])
+  const [selected, setSelected]       = useState('')
+  const [meta, setMeta]               = useState({
+    categories: Object.keys(CATEGORY_META),
+    technical_subcategories: [],
+    difficulties: [],
+  })
+  const [loading, setLoading]         = useState(true)
+  const [offline, setOffline]         = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -62,75 +65,88 @@ export default function Home() {
   }
 
   return (
-    <div style={{ maxWidth: 640, margin: '2.5rem auto', padding: '0 1rem' }}>
-      <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 4 }}>Interview practice</h2>
-      <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>
-        Pick a question, record a webcam answer, get a full multimodal review.
+    <div style={{ maxWidth: 640, margin: '0 auto', padding: '1.25rem 1rem 2rem' }}>
+      <h2 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 4px' }}>Interview practice</h2>
+      <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', margin: '0 0 18px' }}>
+        Pick a question, record your answer, get a full AI review.
       </p>
 
       {/* Category tabs */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
         {meta.categories.map(cat => {
           const m = CATEGORY_META[cat] || CATEGORY_META.HR
           const active = category === cat
           return (
             <button key={cat} onClick={() => { setCategory(cat); setSubcategory('') }} style={{
-              fontSize: 13, padding: '5px 14px', borderRadius: 8, cursor: 'pointer', border: '0.5px solid',
+              fontSize: 13, padding: '6px 14px', borderRadius: 8, cursor: 'pointer',
+              border: '0.5px solid',
               borderColor: active ? m.color : 'var(--color-border-tertiary)',
               background: active ? m.bg : 'var(--color-background-primary)',
-              color: active ? m.text : 'var(--color-text-primary)', fontWeight: active ? 500 : 400,
+              color: active ? m.text : 'var(--color-text-primary)',
+              fontWeight: active ? 500 : 400,
+              minHeight: 36,
             }}>{cat}</button>
           )
         })}
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
         {category === 'Technical' && (
-          <select value={subcategory} onChange={e => setSubcategory(e.target.value)} style={selectStyle}>
+          <select value={subcategory} onChange={e => setSubcategory(e.target.value)}
+            style={{ ...selectStyle, flex: '1 1 140px' }}>
             <option value="">All topics</option>
             {meta.technical_subcategories.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         )}
-        <select value={difficulty} onChange={e => setDifficulty(e.target.value)} style={selectStyle}>
+        <select value={difficulty} onChange={e => setDifficulty(e.target.value)}
+          style={{ ...selectStyle, flex: '1 1 130px' }}>
           <option value="">Any difficulty</option>
           {meta.difficulties.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search questions…"
-          style={{ ...selectStyle, flex: 1, minWidth: 140 }} />
+        <input value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Search questions…"
+          style={{ ...selectStyle, flex: '2 1 180px' }} />
       </div>
 
-      {/* Question select */}
-      <div style={{ background: 'var(--color-background-secondary)', borderRadius: 12,
-        border: '0.5px solid var(--color-border-tertiary)', overflow: 'hidden', marginBottom: 10 }}>
-        <div style={{ padding: '10px 16px', borderBottom: '0.5px solid var(--color-border-tertiary)',
-          display: 'flex', justifyContent: 'space-between' }}>
+      {/* Question dropdown */}
+      <div style={card}>
+        <div style={{ padding: '8px 14px', borderBottom: '0.5px solid var(--color-border-tertiary)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>Select question</span>
           <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
             {loading ? 'Loading…' : `${questions.length} available`}
           </span>
         </div>
-        <div style={{ padding: '12px 16px' }}>
-          <select value={selected} onChange={e => setSelected(e.target.value)} style={{ ...selectStyle, width: '100%' }}>
+        <div style={{ padding: '10px 14px' }}>
+          <select value={selected} onChange={e => setSelected(e.target.value)}
+            style={{ ...selectStyle, width: '100%' }}>
             {questions.length === 0 && <option>No questions match these filters</option>}
             {questions.map((q, i) => (
-              <option key={i} value={q.text}>{q.text.length > 72 ? q.text.slice(0, 72) + '…' : q.text}</option>
+              <option key={i} value={q.text}>
+                {q.text.length > 72 ? q.text.slice(0, 72) + '…' : q.text}
+              </option>
             ))}
           </select>
         </div>
       </div>
 
-      {/* Selected display */}
+      {/* Selected question display */}
       {selected && (
-        <div style={{ background: cmeta.bg, borderRadius: 12, border: `0.5px solid ${cmeta.color}33`,
-          padding: '14px 16px', marginBottom: 10 }}>
-          <p style={{ margin: '0 0 4px', fontSize: 11, color: cmeta.color, fontWeight: 500 }}>{category} question</p>
+        <div style={{
+          background: cmeta.bg, borderRadius: 12,
+          border: `0.5px solid ${cmeta.color}44`,
+          padding: '12px 14px', marginBottom: 10,
+        }}>
+          <p style={{ margin: '0 0 4px', fontSize: 11, color: cmeta.color, fontWeight: 600 }}>
+            {category} question
+          </p>
           <p style={{ margin: 0, fontSize: 14, color: cmeta.text, lineHeight: 1.6 }}>{selected}</p>
         </div>
       )}
 
       {offline && (
-        <p style={{ fontSize: 11, color: '#BA7517', marginBottom: 10 }}>
+        <p style={{ fontSize: 12, color: '#BA7517', margin: '0 0 10px' }}>
           Backend offline — showing a small offline question set.
         </p>
       )}
@@ -138,7 +154,8 @@ export default function Home() {
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={shuffle} style={secondaryBtn}>Shuffle ↺</button>
         <button onClick={() => navigate('/record', { state: { question: selected } })}
-          disabled={!selected} style={{ ...primaryBtn, opacity: selected ? 1 : 0.5 }}>
+          disabled={!selected}
+          style={{ ...primaryBtn, flex: 2, opacity: selected ? 1 : 0.5 }}>
           Start recording →
         </button>
       </div>
@@ -147,15 +164,22 @@ export default function Home() {
 }
 
 const selectStyle = {
-  fontSize: 13, padding: '7px 10px', borderRadius: 8, border: '0.5px solid var(--color-border-tertiary)',
-  background: 'var(--color-background-primary)', color: 'var(--color-text-primary)', cursor: 'pointer',
+  fontSize: 14, padding: '8px 10px', borderRadius: 8,
+  border: '0.5px solid var(--color-border-tertiary)',
+  background: 'var(--color-background-primary)',
+  color: 'var(--color-text-primary)', cursor: 'pointer',
+  minHeight: 40,
+}
+const card = {
+  background: 'var(--color-background-secondary)', borderRadius: 12,
+  border: '0.5px solid var(--color-border-tertiary)', overflow: 'hidden', marginBottom: 10,
 }
 const primaryBtn = {
-  flex: 2, fontSize: 13, padding: '9px 16px', borderRadius: 8, cursor: 'pointer',
+  flex: 2, fontSize: 15, padding: '12px 16px', borderRadius: 10, cursor: 'pointer',
   border: '0.5px solid #534AB7', background: '#534AB7', color: '#fff', fontWeight: 500,
 }
 const secondaryBtn = {
-  flex: 1, fontSize: 13, padding: '9px 16px', borderRadius: 8, cursor: 'pointer',
-  border: '0.5px solid var(--color-border-tertiary)', background: 'var(--color-background-secondary)',
-  color: 'var(--color-text-primary)',
+  flex: 1, fontSize: 15, padding: '12px 16px', borderRadius: 10, cursor: 'pointer',
+  border: '0.5px solid var(--color-border-tertiary)',
+  background: 'var(--color-background-secondary)', color: 'var(--color-text-primary)',
 }

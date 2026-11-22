@@ -154,6 +154,20 @@ CORS_ORIGINS = [
     ).split(",") if o.strip()
 ]
 
+# Optional regex pattern for dynamic origins (e.g. Vercel preview deployments).
+# Example: CORS_ORIGIN_PATTERN=https://aceit-.*\.vercel\.app
+_cors_pattern = os.environ.get("CORS_ORIGIN_PATTERN", r"https://aceit.*\.vercel\.app")
+import re as _re
+_cors_re = _re.compile(_cors_pattern) if _cors_pattern else None
+
+def cors_origin_allowed(origin: str) -> bool:
+    """Return True if origin is in the explicit allowlist or matches the regex pattern."""
+    if origin in CORS_ORIGINS:
+        return True
+    if _cors_re and _cors_re.fullmatch(origin):
+        return True
+    return False
+
 # ---- Session cookie ----
 SESSION_COOKIE_NAME = os.environ.get("SESSION_COOKIE_NAME", "aceit_session")
 CSRF_COOKIE_NAME = os.environ.get("CSRF_COOKIE_NAME", "aceit_csrf")

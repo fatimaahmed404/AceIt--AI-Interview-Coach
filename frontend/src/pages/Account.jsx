@@ -12,7 +12,7 @@ export default function Account() {
   if (!user) return null
 
   return (
-    <div style={{ maxWidth: 620, margin: '2rem auto', padding: '0 1rem' }}>
+    <div style={{ maxWidth: 620, margin: '0 auto', padding: '1.25rem 1rem 2rem' }}>
       <h2 style={{ fontSize: 20, fontWeight: 500, marginBottom: 4 }}>Account settings</h2>
       <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }}>
         Manage your profile, password, and sessions.
