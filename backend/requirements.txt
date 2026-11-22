@@ -19,7 +19,7 @@ tensorflow-cpu
 
 # External services
 assemblyai==0.33.0
-groq==0.11.0
+groq==0.13.1
 
 # Env loader
 python-dotenv==1.0.1
