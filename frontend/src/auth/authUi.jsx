@@ -6,8 +6,8 @@ const ACCENT = '#534AB7'
 export function AuthShell({ title, subtitle, children, footer }) {
   return (
     <div style={{
-      minHeight: 'calc(100dvh - 52px)', display: 'flex', alignItems: 'flex-start',
-      justifyContent: 'center', padding: '2rem 1rem',
+      minHeight: 'calc(100vh - 52px)', display: 'flex', alignItems: 'flex-start',
+      justifyContent: 'center', padding: '3rem 1rem',
     }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{
@@ -130,11 +130,11 @@ export function scorePassword(pw) {
 export function SubmitButton({ children, loading, disabled }) {
   return (
     <button type="submit" disabled={loading || disabled} style={{
-      width: '100%', fontSize: 15, padding: '13px 16px', borderRadius: 10,
+      width: '100%', fontSize: 14, padding: '11px 16px', borderRadius: 8,
       cursor: loading || disabled ? 'not-allowed' : 'pointer',
       border: '0.5px solid #534AB7', background: '#534AB7', color: '#fff', fontWeight: 500,
       opacity: loading || disabled ? 0.6 : 1, display: 'flex', alignItems: 'center',
-      justifyContent: 'center', gap: 8, minHeight: 48,
+      justifyContent: 'center', gap: 8,
     }}>
       {loading && <span style={{
         width: 14, height: 14, border: '2px solid #fff', borderTopColor: 'transparent',
@@ -162,12 +162,12 @@ export function Alert({ kind = 'error', children }) {
   )
 }
 
-const labelStyle = { display: 'block', fontSize: 13, fontWeight: 500, marginBottom: 5,
+const labelStyle = { display: 'block', fontSize: 12.5, fontWeight: 500, marginBottom: 5,
                      color: 'var(--color-text-primary)' }
-const inputStyle = { width: '100%', boxSizing: 'border-box', fontSize: 16, padding: '11px 12px',
+const inputStyle = { width: '100%', boxSizing: 'border-box', fontSize: 14, padding: '9px 12px',
                      borderRadius: 8, border: '0.5px solid', background: 'var(--color-background-primary)',
                      color: 'var(--color-text-primary)', outline: 'none' }
 const toggleStyle = { position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                      background: 'none', border: 'none', color: '#534AB7', fontSize: 13,
-                      cursor: 'pointer', padding: '4px 8px', minHeight: 'unset' }
+                      background: 'none', border: 'none', color: '#534AB7', fontSize: 12,
+                      cursor: 'pointer', padding: 4 }
 const errStyle = { margin: '5px 0 0', fontSize: 12, color: '#D94848' }

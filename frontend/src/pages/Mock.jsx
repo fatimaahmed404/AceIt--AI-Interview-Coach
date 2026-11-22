@@ -168,7 +168,7 @@ export default function Mock() {
         <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6 }}>{q?.text}</p>
       </Card>
 
-      <div style={{ background: '#000', borderRadius: 12, overflow: 'hidden', aspectRatio: '4 / 3',
+      <div className="mock-video" style={{ background: '#000', borderRadius: 12, overflow: 'hidden', aspectRatio: '4 / 3',
         position: 'relative', marginBottom: 14, border: `1px solid ${phase === 'RECORDING' ? '#D94848' : 'var(--color-border-tertiary)'}` }}>
         <video ref={liveRef} playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         {phase === 'THINKING' && (
@@ -198,10 +198,10 @@ const labelFor = k => ({
   posture_score: 'Posture', expression_score: 'Expression',
 }[k] || k)
 
-const Wrap = ({ children }) => <div style={{ maxWidth: 640, margin: '0 auto', padding: '1.25rem 1rem 2rem' }}>{children}</div>
+const Wrap = ({ children }) => <div style={{ maxWidth: 640, margin: '2rem auto', padding: '0 1rem' }}>{children}</div>
 const ErrorBox = ({ children }) => <div style={{ background: '#FCEBEB', border: '0.5px solid #F09595', color: '#791F1F', borderRadius: 10, padding: '10px 14px', fontSize: 13, marginBottom: 14 }}>{children}</div>
 const overlay = { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(0,0,0,0.4)' }
 const h2 = { fontSize: 20, fontWeight: 500, marginBottom: 4 }
 const sub = { fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 20 }
-const primaryBtn = { flex: 2, width: '100%', fontSize: 15, padding: '13px 16px', borderRadius: 10, cursor: 'pointer', border: '0.5px solid #534AB7', background: '#534AB7', color: '#fff', fontWeight: 500 }
-const secondaryBtn = { flex: 1, width: '100%', fontSize: 15, padding: '13px 16px', borderRadius: 10, cursor: 'pointer', border: '0.5px solid var(--color-border-tertiary)', background: 'var(--color-background-secondary)', color: 'var(--color-text-primary)' }
+const primaryBtn = { flex: 2, width: '100%', fontSize: 14, padding: '11px 16px', borderRadius: 8, cursor: 'pointer', border: '0.5px solid #534AB7', background: '#534AB7', color: '#fff', fontWeight: 500 }
+const secondaryBtn = { flex: 1, width: '100%', fontSize: 14, padding: '11px 16px', borderRadius: 8, cursor: 'pointer', border: '0.5px solid var(--color-border-tertiary)', background: 'var(--color-background-secondary)', color: 'var(--color-text-primary)' }

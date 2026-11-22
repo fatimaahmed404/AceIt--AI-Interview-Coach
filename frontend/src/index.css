@@ -1,9 +1,10 @@
 /* =========================================================
-   AceIt — Global design tokens + resets
+   AceIt — Design tokens + minimal resets
+   The original index.css had all styles commented out.
+   These CSS custom properties are required by every page component.
    ========================================================= */
 
 :root {
-  /* Light mode tokens */
   --color-background-primary:   #ffffff;
   --color-background-secondary: #f7f7f8;
   --color-text-primary:         #0f0e17;
@@ -11,14 +12,14 @@
   --color-border-tertiary:      #e4e4e9;
   --color-accent:               #534AB7;
 
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
   color-scheme: light dark;
   color: var(--color-text-primary);
   background: var(--color-background-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -32,15 +33,11 @@
   }
 }
 
-/* Hard reset */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body {
   margin: 0;
   padding: 0;
-  /* Prevent horizontal scroll caused by layout overflow */
   overflow-x: hidden;
 }
 
@@ -50,35 +47,25 @@ html, body {
   flex-direction: column;
 }
 
-/* Prevent iOS input zoom (font-size < 16px triggers auto-zoom) */
+/* Keep inherited font in form elements */
 input, select, textarea, button {
   font-family: inherit;
-  font-size: 16px;   /* overridden per-component but sets the floor */
+  font-size: 16px; /* prevents iOS auto-zoom on inputs */
 }
 
-/* Make images block by default */
-img, svg {
-  display: block;
-  max-width: 100%;
-}
+img, svg { display: block; max-width: 100%; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 
-/* Remove default button styles */
-button {
-  cursor: pointer;
-}
-
-/* Smooth focus rings */
-:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-/* Global keyframes used across multiple components */
+/* Global keyframes used across pages */
 @keyframes spin  { to { transform: rotate(360deg); } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-/* Mobile-safe tap target minimum */
+/* =========================================================
+   Mobile-only additions — no desktop layout is changed
+   ========================================================= */
 @media (max-width: 640px) {
+  /* Minimum tap target size on touch devices */
   button, a, [role="button"] {
     min-height: 44px;
   }

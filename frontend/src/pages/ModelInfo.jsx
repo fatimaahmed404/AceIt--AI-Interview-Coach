@@ -72,5 +72,5 @@ const Row = ({ k, v }) => (
     <span style={{ fontSize: 12.5 }}>{v}</span>
   </div>
 )
-const Wrap = ({ children }) => <div style={{ maxWidth: 700, margin: '0 auto', padding: '1.25rem 1rem 2rem' }}>{children}</div>
+const Wrap = ({ children }) => <div style={{ maxWidth: 700, margin: '2rem auto', padding: '0 1rem' }}>{children}</div>
 const sub = { fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 16 }
